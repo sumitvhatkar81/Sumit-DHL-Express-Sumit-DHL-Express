@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "uM9VTkjcxVY=",
+  "success": true,
+  "projectFilePath": "/Users/puja/Desktop/Sumit-DHL-Express-Sumit-DHL-Express/DHL-Document-App.csproj",
+  "expectedPackageFiles": [
+    "/Users/puja/.nuget/packages/microsoft.entityframeworkcore/10.0.2/microsoft.entityframeworkcore.10.0.2.nupkg.sha512",
+    "/Users/puja/.nuget/packages/microsoft.entityframeworkcore.abstractions/10.0.2/microsoft.entityframeworkcore.abstractions.10.0.2.nupkg.sha512",
+    "/Users/puja/.nuget/packages/microsoft.entityframeworkcore.analyzers/10.0.2/microsoft.entityframeworkcore.analyzers.10.0.2.nupkg.sha512",
+    "/Users/puja/.nuget/packages/microsoft.entityframeworkcore.inmemory/10.0.2/microsoft.entityframeworkcore.inmemory.10.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}

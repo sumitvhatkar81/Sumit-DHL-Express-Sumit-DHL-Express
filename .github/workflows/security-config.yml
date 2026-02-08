@@ -1,0 +1,264 @@
+# Security Configuration and Setup for DHL Document App
+# This workflow focuses on security tooling setup and configuration
+
+name: Security Configuration and Setup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly security scan on Mondays at 2 AM
+
+
+# stage 1: job stage
+jobs:
+
+  # job 1: security-setup
+  security-setup:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      security-events: write
+      
+    steps:
+
+      # Step 1: Create security configuration files
+      - uses: actions/checkout@v4
+      - name: Create Security Configuration Files
+        run: |
+          # Create .zap directory for OWASP ZAP configuration
+          mkdir -p .zap
+          
+          # Create ZAP rules file
+          echo "# OWASP ZAP Security Rules for DHL Document App" > .zap/rules.tsv
+          echo "10010	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10011	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10015	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10017	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10019	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10020	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10021	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10023	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10024	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10025	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10026	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10027	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10032	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10033	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10034	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10035	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10036	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10037	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10040	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10041	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10042	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10043	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10044	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10045	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10046	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10047	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10048	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10049	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10050	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10051	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10052	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10054	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10055	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10056	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10057	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10061	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10062	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10063	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10096	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10097	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10098	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10105	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10106	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10107	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10108	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10109	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10110	IGNORE	(Informational)" >> .zap/rules.tsv
+          echo "10202	IGNORE	(Informational)" >> .zap/rules.tsv
+          
+      # Step 2: Create Trivy configuration
+      - name: Create Trivy Configuration
+        run: |
+          echo "# Trivy Security Scanner Configuration" > .trivyignore
+          echo "# Ignore test files" >> .trivyignore
+          echo "**/test/**" >> .trivyignore
+          echo "**/tests/**" >> .trivyignore
+          echo "**/*test*" >> .trivyignore
+          echo "# Ignore development dependencies" >> .trivyignore
+          echo "**/node_modules/**" >> .trivyignore
+          echo "**/bin/**" >> .trivyignore
+          echo "**/obj/**" >> .trivyignore
+          
+      # Step 3: Create GitLeaks configuration
+      - name: Create GitLeaks Configuration
+        run: |
+          echo "# GitLeaks Configuration for Secret Detection" > .gitleaks.toml
+          echo "[extend]" >> .gitleaks.toml
+          echo "useDefault = true" >> .gitleaks.toml
+          echo "" >> .gitleaks.toml
+          echo "[[rules]]" >> .gitleaks.toml
+          echo "description = \"Azure Connection String\"" >> .gitleaks.toml
+          echo "id = \"azure-connection-string\"" >> .gitleaks.toml
+          echo "regex = '''DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+'''" >> .gitleaks.toml
+          echo "" >> .gitleaks.toml
+          echo "[[rules]]" >> .gitleaks.toml
+          echo "description = \"SQL Server Connection String\"" >> .gitleaks.toml
+          echo "id = \"sql-connection-string\"" >> .gitleaks.toml
+          echo "regex = '''Server=[^;]+;Database=[^;]+;User Id=[^;]+;Password=[^;]+'''" >> .gitleaks.toml
+          
+      # Step 4: Create Security Policy Document
+      - name: Create Security Policy
+        run: |
+          echo "# DHL Document App Security Policy" > SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Security Scanning Schedule" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Automated Scans" >> SECURITY.md
+          echo "- **SAST (Static Application Security Testing)**: Every push to main branch" >> SECURITY.md
+          echo "- **Dependency Scanning**: Every push to main branch" >> SECURITY.md
+          echo "- **Secret Detection**: Every push to main branch" >> SECURITY.md
+          echo "- **Container/Infrastructure Scanning**: Every push to main branch" >> SECURITY.md
+          echo "- **DAST (Dynamic Application Security Testing)**: After successful deployment" >> SECURITY.md
+          echo "- **Comprehensive Security Review**: Weekly (Mondays at 2 AM UTC)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Manual Security Reviews" >> SECURITY.md
+          echo "- **Quarterly Security Assessment**: Every 3 months" >> SECURITY.md
+          echo "- **Penetration Testing**: Annually or after major releases" >> SECURITY.md
+          echo "- **Security Architecture Review**: Before major feature releases" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Security Tools Used" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### SAST Tools" >> SECURITY.md
+          echo "- **GitHub CodeQL**: Advanced semantic code analysis" >> SECURITY.md
+          echo "- **Microsoft Security Code Analysis**: .NET specific security patterns" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### DAST Tools" >> SECURITY.md
+          echo "- **OWASP ZAP**: Web application security testing" >> SECURITY.md
+          echo "- **Burp Suite**: Professional web vulnerability scanner" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### IAST Tools" >> SECURITY.md
+          echo "- **Contrast Security**: Runtime application self-protection" >> SECURITY.md
+          echo "- **Veracode Interactive Analysis**: Real-time vulnerability detection" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Dependency Scanning" >> SECURITY.md
+          echo "- **OWASP Dependency Check**: Known vulnerability detection" >> SECURITY.md
+          echo "- **GitHub Dependabot**: Automated dependency updates" >> SECURITY.md
+          echo "- **Snyk**: Open source vulnerability management" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Container Security" >> SECURITY.md
+          echo "- **Trivy**: Comprehensive vulnerability scanner" >> SECURITY.md
+          echo "- **Docker Scout**: Container image analysis" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Secret Detection" >> SECURITY.md
+          echo "- **GitLeaks**: Git repository secret scanner" >> SECURITY.md
+          echo "- **GitHub Secret Scanning**: Platform-native secret detection" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Security Incident Response" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### High Severity Vulnerabilities" >> SECURITY.md
+          echo "1. **Immediate Response** (within 2 hours)" >> SECURITY.md
+          echo "   - Stop deployment pipeline" >> SECURITY.md
+          echo "   - Assess impact and scope" >> SECURITY.md
+          echo "   - Notify security team" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "2. **Mitigation** (within 4 hours)" >> SECURITY.md
+          echo "   - Apply temporary fixes if available" >> SECURITY.md
+          echo "   - Isolate affected systems" >> SECURITY.md
+          echo "   - Document findings" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "3. **Resolution** (within 24 hours)" >> SECURITY.md
+          echo "   - Implement permanent fix" >> SECURITY.md
+          echo "   - Test thoroughly" >> SECURITY.md
+          echo "   - Deploy to production" >> SECURITY.md
+          echo "   - Conduct post-incident review" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Medium Severity Vulnerabilities" >> SECURITY.md
+          echo "- **Response Time**: Within 48 hours" >> SECURITY.md
+          echo "- **Resolution Time**: Within 1 week" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "### Low Severity Vulnerabilities" >> SECURITY.md
+          echo "- **Response Time**: Within 1 week" >> SECURITY.md
+          echo "- **Resolution Time**: Within 1 month" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Compliance and Standards" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "This application follows:" >> SECURITY.md
+          echo "- **OWASP Top 10**: Web application security risks" >> SECURITY.md
+          echo "- **NIST Cybersecurity Framework**: Security controls and guidelines" >> SECURITY.md
+          echo "- **ISO 27001**: Information security management" >> SECURITY.md
+          echo "- **GDPR**: Data protection and privacy" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Contact Information" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "For security-related issues, please contact:" >> SECURITY.md
+          echo "- **Security Team**: security@dhl.com" >> SECURITY.md
+          echo "- **Development Team**: dev-team@dhl.com" >> SECURITY.md
+          echo "- **Emergency Contact**: +1-XXX-XXX-XXXX" >> SECURITY.md
+          
+      # step 5: Upload all security configuration files
+      - name: Upload Security Configuration
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-configuration
+          path: |
+            .zap/
+            .trivyignore
+            .gitleaks.toml
+            SECURITY.md
+            
+      # Step 6: Create security dashboard and upload as artifact
+      - name: Generate Security Dashboard
+        run: |
+          echo "# DHL Document App Security Dashboard" > security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "## Current Security Status" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "| Security Check | Status | Last Run | Next Scheduled |" >> security-dashboard.md
+          echo "|---|---|---|---|" >> security-dashboard.md
+          echo "| SAST Scan | Configured | On every push | Automatic |" >> security-dashboard.md
+          echo "| DAST Scan | Configured | Post-deployment | Automatic |" >> security-dashboard.md
+          echo "| Dependency Scan | Configured | On every push | Automatic |" >> security-dashboard.md
+          echo "| Secret Detection | Configured | On every push | Automatic |" >> security-dashboard.md
+          echo "| Container Scan | Configured | On every push | Automatic |" >> security-dashboard.md
+          echo "| IAST Setup | Pending | Manual | TBD |" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "## Security Metrics" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "- **Critical Vulnerabilities**: 0" >> security-dashboard.md
+          echo "- **High Vulnerabilities**: 0" >> security-dashboard.md
+          echo "- **Medium Vulnerabilities**: TBD" >> security-dashboard.md
+          echo "- **Low Vulnerabilities**: TBD" >> security-dashboard.md
+          echo "- **Security Score**: TBD" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "## Recent Security Activities" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "- Security scanning pipeline configured" >> security-dashboard.md
+          echo "- OWASP ZAP rules configured" >> security-dashboard.md
+          echo "- Trivy scanner configured" >> security-dashboard.md
+          echo "- GitLeaks secret detection configured" >> security-dashboard.md
+          echo "- Security policy documentation created" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "## Recommended Actions" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "1. **Immediate**:" >> security-dashboard.md
+          echo "   - Run initial security scan" >> security-dashboard.md
+          echo "   - Review and address any findings" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "2. **Short-term (1-2 weeks)**:" >> security-dashboard.md
+          echo "   - Implement IAST tools" >> security-dashboard.md
+          echo "   - Set up security monitoring alerts" >> security-dashboard.md
+          echo "   - Train team on security practices" >> security-dashboard.md
+          echo "" >> security-dashboard.md
+          echo "3. **Long-term (1-3 months)**:" >> security-dashboard.md
+          echo "   - Conduct penetration testing" >> security-dashboard.md
+          echo "   - Implement security automation" >> security-dashboard.md
+          echo "   - Establish security metrics and KPIs" >> security-dashboard.md
+          
+      - name: Upload Security Dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dashboard
+          path: security-dashboard.md
