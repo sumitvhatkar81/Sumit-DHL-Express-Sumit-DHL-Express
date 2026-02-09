@@ -72,8 +72,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          distribution: "zulu"
-          java-version: "11"
+          distribution: 'zulu'
+          java-version: '11'
 
       # Download and install OWASP Dependency Check
       - name: Install Dependency Check
@@ -83,11 +83,22 @@ jobs:
           Expand-Archive -Path "dependency-check.zip" -DestinationPath "./dependency-check"
           echo "Dependency Check installed."
 
+      # Verify if the dependency-check.bat exists
+      - name: Verify Dependency Check Installation
+        run: |
+          if (-Not (Test-Path -Path .\dependency-check\bin\dependency-check.bat)) {
+            echo "Dependency Check batch file not found. Check extraction path."
+            exit 1
+          } else {
+            echo "Dependency Check batch file located."
+          }
+
       # Run Dependency Check analysis
       - name: Run Dependency Check
+        shell: cmd
         run: |
           echo "Running OWASP Dependency Check..."
-          .\dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
+          dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
           echo "Dependency Check analysis completed."
 
       # Validate Dependency Scan Results
@@ -140,18 +151,36 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # Checkout repository and Run GitLeaks and Validate secrets test
+      # Step 1: Checkout the repository
       - uses: actions/checkout@v4
 
-      - name: Test GitLeaks Configuration
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.DHL_TOKEN }}
+      # Step 2: Download and Install GitLeaks if necessary
+      - name: Install GitLeaks
+        run: |
+          echo "Downloading GitLeaks..."
+          $version = "8.24.3"
+          $url = "https://github.com/zricethezav/gitleaks/releases/download/v$version/gitleaks_${version}_windows_x64.tar.gz"
+          Invoke-WebRequest -Uri $url -OutFile "gitleaks_windows.tar.gz"
+          Expand-Archive -Path "gitleaks_windows.tar.gz" -DestinationPath "."
+          echo "GitLeaks installed."
 
+      # Step 3: Run GitLeaks
+      - name: Run GitLeaks
+        run: |
+          .\gitleaks.exe detect --source . --report-format json --report-path gitleaks-report.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Default token that is automatically provided
+
+      # Step 4: Validate Secret Detection
       - name: Validate Secret Detection
         run: |
-          echo "Secret detection test completed successfully"
-          echo "SECRET_TEST=PASSED" >> $env:GITHUB_ENV
+          if (Test-Path "gitleaks-report.json") {
+            echo "Secret detection test completed successfully"
+            echo "SECRET_TEST=PASSED" >> $env:GITHUB_ENV
+          } else {
+            echo "Secret detection test failed"
+            exit 1
+          }
 
   # Job 4: DAST CONFIGURATION TEST
   test-dast-configuration:
