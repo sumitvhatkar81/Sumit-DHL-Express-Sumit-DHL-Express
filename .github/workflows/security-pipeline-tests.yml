@@ -60,7 +60,7 @@ jobs:
           echo "SAST (CodeQL) configuration test completed successfully"
           echo "SAST_TEST=PASSED" >> $env:GITHUB_ENV
 
-  # Dependency Scanning Test
+ #Job 2: Dependency Scanning Test
   test-dependency-scanning:
     runs-on: windows-latest
   
@@ -79,7 +79,7 @@ jobs:
       - name: Download Dependency Check
         run: |
           echo "Downloading OWASP Dependency Check..."
-          $version = "8.2.1" 
+          $version = "8.2.1"
           $url = "https://github.com/jeremylong/DependencyCheck/releases/download/v$version/dependency-check-$version-release.zip"
           $output = "dependency-check.zip"
           Invoke-WebRequest -Uri $url -OutFile $output
@@ -89,7 +89,7 @@ jobs:
       - name: Extract Dependency Check
         run: |
           echo "Extracting Dependency Check..."
-          Expand-Archive -Path "dependency-check.zip" -DestinationPath ".\dependency-check"
+          Expand-Archive -Path "dependency-check.zip" -DestinationPath "."
           echo "Extraction complete."
   
       # Step 5: Verify Extraction
@@ -98,7 +98,7 @@ jobs:
           echo "Checking the existence of the dependency-check.bat file..."
           if (-Not (Test-Path ".\dependency-check\bin\dependency-check.bat")) {
             echo "Dependency Check batch file not found. Check extraction path."
-            Get-ChildItem -Path .\dependency-check -Recurse
+            Get-ChildItem -Path .\ -Recurse
             exit 1
           } else {
             echo "Dependency Check batch file located."
@@ -122,7 +122,6 @@ jobs:
             echo "Dependency scanning test failed"
             exit 1
           }
-
   # Job 3: CONTAINER SCANNING TEST
   test-container-scanning:
     runs-on: windows-latest
