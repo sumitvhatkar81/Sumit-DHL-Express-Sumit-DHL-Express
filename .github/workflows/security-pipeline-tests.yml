@@ -65,35 +65,38 @@ jobs:
     runs-on: windows-latest
   
     steps:
-      # Checkout code for a fresh runner
+      # Step 1: Checkout code for a fresh runner
       - uses: actions/checkout@v4
   
-      # Set up JDK (required for OWASP Dependency Check)
+      # Step 2: Set up JDK (required for OWASP Dependency Check)
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
   
-      # Download Dependency Check
+      # Step 3: Download Dependency Check
       - name: Download Dependency Check
         run: |
           echo "Downloading OWASP Dependency Check..."
-          Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.2.1/dependency-check-8.2.1-release.zip" -OutFile "dependency-check.zip"
+          $version = "8.2.1" 
+          $url = "https://github.com/jeremylong/DependencyCheck/releases/download/v$version/dependency-check-$version-release.zip"
+          $output = "dependency-check.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
           echo "Download complete."
   
-      # Extract Dependency Check
+      # Step 4: Extract Dependency Check
       - name: Extract Dependency Check
         run: |
           echo "Extracting Dependency Check..."
-          Expand-Archive -Path "dependency-check.zip" -DestinationPath "./dependency-check"
+          Expand-Archive -Path "dependency-check.zip" -DestinationPath ".\dependency-check"
           echo "Extraction complete."
   
-      # Verify Extraction
+      # Step 5: Verify Extraction
       - name: Verify Dependency Check Installation
         run: |
           echo "Checking the existence of the dependency-check.bat file..."
-          if (-Not (Test-Path -Path ".\dependency-check\bin\dependency-check.bat")) {
+          if (-Not (Test-Path ".\dependency-check\bin\dependency-check.bat")) {
             echo "Dependency Check batch file not found. Check extraction path."
             Get-ChildItem -Path .\dependency-check -Recurse
             exit 1
@@ -101,7 +104,7 @@ jobs:
             echo "Dependency Check batch file located."
           }
   
-      # Run Dependency Check analysis
+      # Step 6: Run Dependency Check analysis
       - name: Run Dependency Check
         shell: cmd
         run: |
@@ -109,7 +112,7 @@ jobs:
           dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
           echo "Dependency Check analysis completed."
   
-      # Validate results of Dependency Scan
+      # Step 7: Validate results of Dependency Scan
       - name: Validate Dependency Scan Results
         run: |
           if (Test-Path "test-reports") {
