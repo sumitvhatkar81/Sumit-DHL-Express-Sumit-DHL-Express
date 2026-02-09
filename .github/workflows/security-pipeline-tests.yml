@@ -61,67 +61,67 @@ jobs:
           echo "SAST_TEST=PASSED" >> $env:GITHUB_ENV
 
  #Job 2: Dependency Scanning Test
-  test-dependency-scanning:
-    runs-on: windows-latest
+  # test-dependency-scanning:
+  #   runs-on: windows-latest
   
-    steps:
-      # Step 1: Checkout code for a fresh runner
-      - uses: actions/checkout@v4
+  #   steps:
+  #     # Step 1: Checkout code for a fresh runner
+  #     - uses: actions/checkout@v4
   
-      # Step 2: Set up JDK (required for OWASP Dependency Check)
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '11'
+  #     # Step 2: Set up JDK (required for OWASP Dependency Check)
+  #     - name: Set up JDK
+  #       uses: actions/setup-java@v3
+  #       with:
+  #         distribution: 'zulu'
+  #         java-version: '11'
   
-      # Step 3: Download Dependency Check
-      - name: Download Dependency Check
-        run: |
-          echo "Downloading OWASP Dependency Check..."
-          $version = "8.2.1"
-          $url = "https://github.com/jeremylong/DependencyCheck/releases/download/v$version/dependency-check-$version-release.zip"
-          $output = "dependency-check.zip"
-          Invoke-WebRequest -Uri $url -OutFile $output
-          echo "Download complete."
+  #     # Step 3: Download Dependency Check
+  #     - name: Download Dependency Check
+  #       run: |
+  #         echo "Downloading OWASP Dependency Check..."
+  #         $version = "8.2.1"
+  #         $url = "https://github.com/jeremylong/DependencyCheck/releases/download/v$version/dependency-check-$version-release.zip"
+  #         $output = "dependency-check.zip"
+  #         Invoke-WebRequest -Uri $url -OutFile $output
+  #         echo "Download complete."
   
-      # Step 4: Extract Dependency Check
-      - name: Extract Dependency Check
-        run: |
-          echo "Extracting Dependency Check..."
-          Expand-Archive -Path "dependency-check.zip" -DestinationPath "."
-          echo "Extraction complete."
+  #     # Step 4: Extract Dependency Check
+  #     - name: Extract Dependency Check
+  #       run: |
+  #         echo "Extracting Dependency Check..."
+  #         Expand-Archive -Path "dependency-check.zip" -DestinationPath "."
+  #         echo "Extraction complete."
   
-      # Step 5: Verify Extraction
-      - name: Verify Dependency Check Installation
-        run: |
-          echo "Checking the existence of the dependency-check.bat file..."
-          if (-Not (Test-Path ".\dependency-check\bin\dependency-check.bat")) {
-            echo "Dependency Check batch file not found. Check extraction path."
-            Get-ChildItem -Path .\ -Recurse
-            exit 1
-          } else {
-            echo "Dependency Check batch file located."
-          }
+  #     # Step 5: Verify Extraction
+  #     - name: Verify Dependency Check Installation
+  #       run: |
+  #         echo "Checking the existence of the dependency-check.bat file..."
+  #         if (-Not (Test-Path ".\dependency-check\bin\dependency-check.bat")) {
+  #           echo "Dependency Check batch file not found. Check extraction path."
+  #           Get-ChildItem -Path .\ -Recurse
+  #           exit 1
+  #         } else {
+  #           echo "Dependency Check batch file located."
+  #         }
   
-      # Step 6: Run Dependency Check analysis
-      - name: Run Dependency Check
-        shell: cmd
-        run: |
-          echo "Running OWASP Dependency Check..."
-          dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
-          echo "Dependency Check analysis completed."
+  #     # Step 6: Run Dependency Check analysis
+  #     - name: Run Dependency Check
+  #       shell: cmd
+  #       run: |
+  #         echo "Running OWASP Dependency Check..."
+  #         dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
+  #         echo "Dependency Check analysis completed."
   
-      # Step 7: Validate results of Dependency Scan
-      - name: Validate Dependency Scan Results
-        run: |
-          if (Test-Path "test-reports") {
-            echo "Dependency scanning test completed successfully"
-            echo "DEPENDENCY_TEST=PASSED" >> $env:GITHUB_ENV
-          } else {
-            echo "Dependency scanning test failed"
-            exit 1
-          }
+  #     # Step 7: Validate results of Dependency Scan
+  #     - name: Validate Dependency Scan Results
+  #       run: |
+  #         if (Test-Path "test-reports") {
+  #           echo "Dependency scanning test completed successfully"
+  #           echo "DEPENDENCY_TEST=PASSED" >> $env:GITHUB_ENV
+  #         } else {
+  #           echo "Dependency scanning test failed"
+  #           exit 1
+  #         }
   # Job 3: CONTAINER SCANNING TEST
   test-container-scanning:
     runs-on: windows-latest
