@@ -60,68 +60,6 @@ jobs:
           echo "SAST (CodeQL) configuration test completed successfully"
           echo "SAST_TEST=PASSED" >> $env:GITHUB_ENV
 
- #Job 2: Dependency Scanning Test
-  # test-dependency-scanning:
-  #   runs-on: windows-latest
-  
-  #   steps:
-  #     # Step 1: Checkout code for a fresh runner
-  #     - uses: actions/checkout@v4
-  
-  #     # Step 2: Set up JDK (required for OWASP Dependency Check)
-  #     - name: Set up JDK
-  #       uses: actions/setup-java@v3
-  #       with:
-  #         distribution: 'zulu'
-  #         java-version: '11'
-  
-  #     # Step 3: Download Dependency Check
-  #     - name: Download Dependency Check
-  #       run: |
-  #         echo "Downloading OWASP Dependency Check..."
-  #         $version = "8.2.1"
-  #         $url = "https://github.com/jeremylong/DependencyCheck/releases/download/v$version/dependency-check-$version-release.zip"
-  #         $output = "dependency-check.zip"
-  #         Invoke-WebRequest -Uri $url -OutFile $output
-  #         echo "Download complete."
-  
-  #     # Step 4: Extract Dependency Check
-  #     - name: Extract Dependency Check
-  #       run: |
-  #         echo "Extracting Dependency Check..."
-  #         Expand-Archive -Path "dependency-check.zip" -DestinationPath "."
-  #         echo "Extraction complete."
-  
-  #     # Step 5: Verify Extraction
-  #     - name: Verify Dependency Check Installation
-  #       run: |
-  #         echo "Checking the existence of the dependency-check.bat file..."
-  #         if (-Not (Test-Path ".\dependency-check\bin\dependency-check.bat")) {
-  #           echo "Dependency Check batch file not found. Check extraction path."
-  #           Get-ChildItem -Path .\ -Recurse
-  #           exit 1
-  #         } else {
-  #           echo "Dependency Check batch file located."
-  #         }
-  
-  #     # Step 6: Run Dependency Check analysis
-  #     - name: Run Dependency Check
-  #       shell: cmd
-  #       run: |
-  #         echo "Running OWASP Dependency Check..."
-  #         dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
-  #         echo "Dependency Check analysis completed."
-  
-  #     # Step 7: Validate results of Dependency Scan
-  #     - name: Validate Dependency Scan Results
-  #       run: |
-  #         if (Test-Path "test-reports") {
-  #           echo "Dependency scanning test completed successfully"
-  #           echo "DEPENDENCY_TEST=PASSED" >> $env:GITHUB_ENV
-  #         } else {
-  #           echo "Dependency scanning test failed"
-  #           exit 1
-  #         }
   # Job 3: CONTAINER SCANNING TEST
   test-container-scanning:
     runs-on: windows-latest
@@ -185,9 +123,9 @@ jobs:
             exit 1
           }
 
-  # Job 4: DAST CONFIGURATION TEST
+  # Job 5: DAST CONFIGURATION TEST
   test-dast-configuration:
-    runs-on: windows-latest # Use Windows for consistency with main workflow
+    runs-on: windows-latest
 
     steps:
       # Checkout repository and Create ZAP config and DAST testing
@@ -195,7 +133,6 @@ jobs:
 
       - name: Create Test ZAP Configuration
         run: |
-
           if (!(Test-Path ".zap")) {
             New-Item -ItemType Directory -Path ".zap" -Force}
           echo "# Test ZAP Rules" > .zap/rules.tsv
@@ -203,7 +140,6 @@ jobs:
 
       - name: Test Windows-Compatible DAST Configuration
         run: |
-
           echo "Testing Windows-compatible DAST configuration..."
           echo "Note: ZAP Docker action is not compatible with Windows runners."
           echo "Using alternative DAST testing approach for Windows."
@@ -220,8 +156,6 @@ jobs:
         run: |
           if (Test-Path "dast-test-results.json") {
             echo "DAST configuration test completed successfully (Windows-compatible)"
-
-
             echo "DAST_TEST=PASSED" >> $env:GITHUB_ENV
           } else {
             echo "DAST configuration test failed"
@@ -234,13 +168,12 @@ jobs:
           name: dast-test-results
           path: dast-test-results.json
 
-  # Job 4: SECURITY REPORTING TEST
+  # Job 6: SECURITY REPORTING TEST
   test-security-reporting:
     runs-on: windows-latest
     needs:
       [
         test-sast-configuration,
-        test-dependency-scanning,
         test-container-scanning,
         test-secret-detection,
       ]
@@ -257,7 +190,6 @@ jobs:
           echo "" >> test-security-summary.md
           echo "## Test Results:" >> test-security-summary.md
           echo "- SAST Configuration Test: PASSED" >> test-security-summary.md
-          echo "- Dependency Scanning Test: PASSED" >> test-security-summary.md
           echo "- Container Scanning Test: PASSED" >> test-security-summary.md
           echo "- Secret Detection Test: PASSED" >> test-security-summary.md
           echo "- Security Report Generation: PASSED" >> test-security-summary.md
@@ -278,13 +210,12 @@ jobs:
           name: security-test-results
           path: test-security-summary.md
 
-  # Job 4: PIPELINE INTEGRATION TEST
+  # Job 7: PIPELINE INTEGRATION TEST
   test-pipeline-integration:
     runs-on: windows-latest
     needs:
       [
         test-sast-configuration,
-        test-dependency-scanning,
         test-container-scanning,
         test-secret-detection,
         test-dast-configuration,
@@ -292,7 +223,6 @@ jobs:
       ]
 
     steps:
-      # Step 1: Simulate pipeline flow
       - uses: actions/checkout@v4
 
       - name: Test Pipeline Job Dependencies
@@ -321,7 +251,6 @@ jobs:
 
           echo "Pipeline integration test completed successfully"
 
-      # Step 2: Test error handling
       - name: Test Error Handling
         run: |
           echo "Testing error handling scenarios..."
@@ -343,7 +272,6 @@ jobs:
 
           echo "Error handling tests completed successfully"
 
-      # Step 3: Generate final test report
       - name: Generate Final Test Report
         run: |
           echo "# Security Pipeline Test Report" > final-test-report.md
@@ -353,7 +281,6 @@ jobs:
           echo "| Test Category | Status | Details |" >> final-test-report.md
           echo "|---|---|---|" >> final-test-report.md
           echo "| SAST Configuration | PASSED | CodeQL properly configured for C# analysis |" >> final-test-report.md
-          echo "| Dependency Scanning | PASSED | OWASP Dependency Check working correctly |" >> final-test-report.md
           echo "| Container Scanning | PASSED | Trivy scanner configured and functional |" >> final-test-report.md
           echo "| Secret Detection | PASSED | GitLeaks properly detecting secrets |" >> final-test-report.md
           echo "| DAST Configuration | PASSED | OWASP ZAP baseline scan configured |" >> final-test-report.md
@@ -377,21 +304,18 @@ jobs:
           echo "- Monitor the first production security scan results" >> final-test-report.md
           echo "- Schedule regular security reviews and updates" >> final-test-report.md
 
-      # Step 4: Upload final report
       - name: Upload Final Test Report
         uses: actions/upload-artifact@v4
         with:
           name: final-security-test-report
           path: final-test-report.md
 
-      # Step 5: Completion summary
       - name: Test Completion Summary
         run: |
           echo "Security Pipeline Testing Completed Successfully!"
           echo ""
           echo "Test Results Summary:"
           echo "- SAST Configuration: PASSED"
-          echo "- Dependency Scanning: PASSED"
           echo "- Container Scanning: PASSED"
           echo "- Secret Detection: PASSED"
           echo "- DAST Configuration: PASSED"
