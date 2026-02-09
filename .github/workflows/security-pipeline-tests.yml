@@ -149,28 +149,29 @@ jobs:
   # Job 4: SECRET DETECTION TEST
   test-secret-detection:
     runs-on: windows-latest
-
+  
     steps:
       # Step 1: Checkout the repository
       - uses: actions/checkout@v4
-
-      # Step 2: Download and Install GitLeaks if necessary
+  
+      # Step 2: Download and Install GitLeaks
       - name: Install GitLeaks
         run: |
           echo "Downloading GitLeaks..."
-          $version = "8.24.3"
-          $url = "https://github.com/zricethezav/gitleaks/releases/download/v$version/gitleaks_${version}_windows_x64.tar.gz"
-          Invoke-WebRequest -Uri $url -OutFile "gitleaks_windows.tar.gz"
-          Expand-Archive -Path "gitleaks_windows.tar.gz" -DestinationPath "."
+          $version = "8.24.3" # Confirm the version exists
+          $url = "https://github.com/zricethezav/gitleaks/releases/download/v$version/gitleaks_${version}_windows_x64.zip"
+          $output = ".\gitleaks_windows.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath ".\gitleaks"
           echo "GitLeaks installed."
-
+  
       # Step 3: Run GitLeaks
       - name: Run GitLeaks
         run: |
-          .\gitleaks.exe detect --source . --report-format json --report-path gitleaks-report.json
+          .\gitleaks\gitleaks.exe detect --source . --report-format json --report-path gitleaks-report.json
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Default token that is automatically provided
-
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
       # Step 4: Validate Secret Detection
       - name: Validate Secret Detection
         run: |
