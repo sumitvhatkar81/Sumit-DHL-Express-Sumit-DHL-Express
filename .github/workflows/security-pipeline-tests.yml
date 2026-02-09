@@ -7,41 +7,38 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - '.github/workflows/deploy-with-security.yml'
-      - '.github/workflows/security-config.yml'
-      - '.zap/**'
-      - '.trivyignore'
-      - '.gitleaks.toml'
-
+      - ".github/workflows/deploy-with-security.yml"
+      - ".github/workflows/security-config.yml"
+      - ".zap/**"
+      - ".trivyignore"
+      - ".gitleaks.toml"
 
 # stage 1: job stage
 jobs:
-
   # Job 1: SAST CONFIGURATION TEST
   test-sast-configuration:
     runs-on: windows-latest
     permissions:
       contents: read
       security-events: write
-      
-    steps:
 
+    steps:
       # Step 1: Checkout repository and Initialize CodeQL (SAST) and Install .NET SDK
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Test CodeQL Configuration
         uses: github/codeql-action/init@v3
         with:
           languages: csharp
-          
+
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.x'
-          
-      # Step 2: Test build process for SAST scanning and Run CodeQL analysis 
+          dotnet-version: "10.x"
+
+      # Step 2: Test build process for SAST scanning and Run CodeQL analysis
       - name: Test Build for Security Scan
         run: |
           echo "Testing build process for security scanning..."
@@ -52,12 +49,12 @@ jobs:
             echo "Build failed for SAST scanning"
             exit 1
           }
-      
+
       - name: Test CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:csharp"
-          
+
       - name: Validate SAST Results
         run: |
           echo "SAST (CodeQL) configuration test completed successfully"
@@ -66,23 +63,34 @@ jobs:
   # Job 2: DEPENDENCY SCANNING TEST
   test-dependency-scanning:
     runs-on: windows-latest
-    
-    steps:
 
-      # Checkout code for fresh runner and Dependency-Check and Validate scan and test results
+    steps:
+      # Checkout code for a fresh runner
       - uses: actions/checkout@v4
-      
-      - name: Test Dependency Check Configuration
-        uses: dependency-check/Dependency-Check_Action@main
+
+      # Step to setup Java, which is required for OWASP Dependency Check
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          project: 'DHL-Document-App-Test'
-          path: '.'
-          format: 'JSON'
-          args: >
-            --enableRetired
-            --enableExperimental
-            --out test-reports
-            
+          distribution: "zulu"
+          java-version: "11"
+
+      # Download and install OWASP Dependency Check
+      - name: Install Dependency Check
+        run: |
+          echo "Downloading OWASP Dependency Check..."
+          Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.2.1/dependency-check-8.2.1-release.zip" -OutFile "dependency-check.zip"
+          Expand-Archive -Path "dependency-check.zip" -DestinationPath "./dependency-check"
+          echo "Dependency Check installed."
+
+      # Run Dependency Check analysis
+      - name: Run Dependency Check
+        run: |
+          echo "Running OWASP Dependency Check..."
+          .\dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
+          echo "Dependency Check analysis completed."
+
+      # Validate Dependency Scan Results
       - name: Validate Dependency Scan Results
         run: |
           if (Test-Path "test-reports") {
@@ -92,7 +100,8 @@ jobs:
             echo "Dependency scanning test failed"
             exit 1
           }
-          
+
+      # Test .NET Security Audit
       - name: Test .NET Security Audit
         run: |
           echo "Testing .NET security audit commands..."
@@ -100,24 +109,22 @@ jobs:
           dotnet list package --deprecated
           echo ".NET security audit test completed"
 
-
   # Job 3: CONTAINER SCANNING TEST
   test-container-scanning:
     runs-on: windows-latest
-    
-    steps:
 
+    steps:
       # Checkout repository and Trivy filesystem scan Validate Trivy output
       - uses: actions/checkout@v4
-      
+
       - name: Test Trivy Configuration
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'json'
-          output: 'trivy-test-results.json'
-          
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "trivy-test-results.json"
+
       - name: Validate Container Scan Results
         run: |
           if (Test-Path "trivy-test-results.json") {
@@ -128,36 +135,32 @@ jobs:
             exit 1
           }
 
-
   # Job 4: SECRET DETECTION TEST
   test-secret-detection:
     runs-on: windows-latest
-    
-    steps:
 
+    steps:
       # Checkout repository and Run GitLeaks and Validate secrets test
       - uses: actions/checkout@v4
-      
+
       - name: Test GitLeaks Configuration
         uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+          GITHUB_TOKEN: ${{ secrets.DHL_TOKEN }}
+
       - name: Validate Secret Detection
         run: |
           echo "Secret detection test completed successfully"
           echo "SECRET_TEST=PASSED" >> $env:GITHUB_ENV
 
-  
   # Job 4: DAST CONFIGURATION TEST
   test-dast-configuration:
-    runs-on: windows-latest  # Use Windows for consistency with main workflow
-    
-    steps:
+    runs-on: windows-latest # Use Windows for consistency with main workflow
 
+    steps:
       # Checkout repository and Create ZAP config and DAST testing
       - uses: actions/checkout@v4
-      
+
       - name: Create Test ZAP Configuration
         run: |
 
@@ -165,14 +168,14 @@ jobs:
             New-Item -ItemType Directory -Path ".zap" -Force}
           echo "# Test ZAP Rules" > .zap/rules.tsv
           echo "10010`tIGNORE`t(Test Informational)" >> .zap/rules.tsv
-          
+
       - name: Test Windows-Compatible DAST Configuration
         run: |
 
           echo "Testing Windows-compatible DAST configuration..."
           echo "Note: ZAP Docker action is not compatible with Windows runners."
           echo "Using alternative DAST testing approach for Windows."
-          
+
           echo "# DAST Test Results" > dast-test-results.json
           echo "{" >> dast-test-results.json
           echo "  \"test_status\": \"passed\"," >> dast-test-results.json
@@ -180,7 +183,7 @@ jobs:
           echo "  \"runner\": \"windows-latest\"," >> dast-test-results.json
           echo "  \"alternative_approach\": \"Docker-based ZAP replaced with Windows-compatible solution\"" >> dast-test-results.json
           echo "}" >> dast-test-results.json
-          
+
       - name: Validate DAST Configuration
         run: |
           if (Test-Path "dast-test-results.json") {
@@ -192,26 +195,31 @@ jobs:
             echo "DAST configuration test failed"
             exit 1
           }
-          
+
       - name: Upload DAST Test Results
         uses: actions/upload-artifact@v4
         with:
           name: dast-test-results
           path: dast-test-results.json
 
-
   # Job 4: SECURITY REPORTING TEST
   test-security-reporting:
     runs-on: windows-latest
-    needs: [test-sast-configuration, test-dependency-scanning, test-container-scanning, test-secret-detection]
-    
+    needs:
+      [
+        test-sast-configuration,
+        test-dependency-scanning,
+        test-container-scanning,
+        test-secret-detection,
+      ]
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Test Security Report Generation
         run: |
           echo "Testing security report generation..."
-          
+
           # Test security summary generation
           echo "# Security Test Summary" > test-security-summary.md
           echo "" >> test-security-summary.md
@@ -224,82 +232,86 @@ jobs:
           echo "" >> test-security-summary.md
           echo "## Test Conclusion:" >> test-security-summary.md
           echo "All security scanning components are properly configured and functional." >> test-security-summary.md
-          
+
           if (Test-Path "test-security-summary.md") {
             echo "Security report generation test passed"
           } else {
             echo "Security report generation test failed"
             exit 1
           }
-          
+
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         with:
           name: security-test-results
           path: test-security-summary.md
 
-
   # Job 4: PIPELINE INTEGRATION TEST
   test-pipeline-integration:
     runs-on: windows-latest
-    needs: [test-sast-configuration, test-dependency-scanning, test-container-scanning, test-secret-detection, test-dast-configuration, test-security-reporting]
-    
-    steps:
+    needs:
+      [
+        test-sast-configuration,
+        test-dependency-scanning,
+        test-container-scanning,
+        test-secret-detection,
+        test-dast-configuration,
+        test-security-reporting,
+      ]
 
+    steps:
       # Step 1: Simulate pipeline flow
       - uses: actions/checkout@v4
-      
+
       - name: Test Pipeline Job Dependencies
         run: |
           echo "Testing pipeline job dependencies and sequencing..."
-          
+
           # Simulate the security scan stage
           echo "Simulating security-scan job..."
           Start-Sleep -Seconds 2
           echo "Security scan simulation completed"
-          
+
           # Simulate the build stage (depends on security-scan)
           echo "Simulating build job (depends on security-scan)..."
           Start-Sleep -Seconds 2
           echo "Build simulation completed"
-          
+
           # Simulate the DAST scan stage (depends on security-scan and build)
           echo "Simulating dast-scan job (depends on security-scan and build)..."
           Start-Sleep -Seconds 2
           echo "DAST scan simulation completed"
-          
+
           # Simulate the deploy stage (depends on build and dast-scan)
           echo "Simulating deploy job (depends on build and dast-scan)..."
           Start-Sleep -Seconds 2
           echo "Deploy simulation completed"
-          
-          echo "Pipeline integration test completed successfully"
-          
 
-      # Step 2: Test error handling    
+          echo "Pipeline integration test completed successfully"
+
+      # Step 2: Test error handling
       - name: Test Error Handling
         run: |
           echo "Testing error handling scenarios..."
-          
+
           # Test scenario: Security scan fails
           echo "Test Case 1: Security scan failure handling"
           echo "Expected: Build and deploy should not proceed"
           echo "Test Case 1: PASSED (dependency configured correctly)"
-          
+
           # Test scenario: Build succeeds but DAST fails
           echo "Test Case 2: DAST failure handling"
           echo "Expected: Deploy should not proceed"
           echo "Test Case 2: PASSED (dependency configured correctly)"
-          
+
           # Test scenario: All scans pass
           echo "Test Case 3: All scans successful"
           echo "Expected: Full pipeline should execute"
           echo "Test Case 3: PASSED (pipeline flows correctly)"
-          
-          echo "Error handling tests completed successfully"
-          
 
-      # Step 3: Generate final test report     
+          echo "Error handling tests completed successfully"
+
+      # Step 3: Generate final test report
       - name: Generate Final Test Report
         run: |
           echo "# Security Pipeline Test Report" > final-test-report.md
@@ -332,16 +344,15 @@ jobs:
           echo "- Run the security-config.yml workflow to set up configurations" >> final-test-report.md
           echo "- Monitor the first production security scan results" >> final-test-report.md
           echo "- Schedule regular security reviews and updates" >> final-test-report.md
-          
 
-      # Step 4: Upload final report    
+      # Step 4: Upload final report
       - name: Upload Final Test Report
         uses: actions/upload-artifact@v4
         with:
           name: final-security-test-report
           path: final-test-report.md
-      
-      # Step 5: Completion summary    
+
+      # Step 5: Completion summary
       - name: Test Completion Summary
         run: |
           echo "Security Pipeline Testing Completed Successfully!"
