@@ -25,9 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create Security Configuration Files
         run: |
-          # # Create .zap directory for OWASP ZAP #configuration
-          # mkdir -p .zap
-          
+         
           # Create ZAP rules file
           echo "# OWASP ZAP Security Rules for DHL Document App" > .zap/rules.tsv
           echo "10010	IGNORE	(Informational)" >> .zap/rules.tsv
