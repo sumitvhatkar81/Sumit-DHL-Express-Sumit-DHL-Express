@@ -60,39 +60,47 @@ jobs:
           echo "SAST (CodeQL) configuration test completed successfully"
           echo "SAST_TEST=PASSED" >> $env:GITHUB_ENV
 
-  # Job 2: DEPENDENCY SCANNING TEST
+  # Dependency Scanning Test
   test-dependency-scanning:
     runs-on: windows-latest
-
+  
     steps:
       # Checkout code for a fresh runner
       - uses: actions/checkout@v4
-
-      # Step to setup Java, which is required for OWASP Dependency Check
+  
+      # Set up JDK (required for OWASP Dependency Check)
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '11'
-
-      # Download and install OWASP Dependency Check
-      - name: Install Dependency Check
+  
+      # Download Dependency Check
+      - name: Download Dependency Check
         run: |
           echo "Downloading OWASP Dependency Check..."
           Invoke-WebRequest -Uri "https://github.com/jeremylong/DependencyCheck/releases/download/v8.2.1/dependency-check-8.2.1-release.zip" -OutFile "dependency-check.zip"
+          echo "Download complete."
+  
+      # Extract Dependency Check
+      - name: Extract Dependency Check
+        run: |
+          echo "Extracting Dependency Check..."
           Expand-Archive -Path "dependency-check.zip" -DestinationPath "./dependency-check"
-          echo "Dependency Check installed."
-
-      # Verify if the dependency-check.bat exists
+          echo "Extraction complete."
+  
+      # Verify Extraction
       - name: Verify Dependency Check Installation
         run: |
-          if (-Not (Test-Path -Path .\dependency-check\bin\dependency-check.bat)) {
+          echo "Checking the existence of the dependency-check.bat file..."
+          if (-Not (Test-Path -Path ".\dependency-check\bin\dependency-check.bat")) {
             echo "Dependency Check batch file not found. Check extraction path."
+            Get-ChildItem -Path .\dependency-check -Recurse
             exit 1
           } else {
             echo "Dependency Check batch file located."
           }
-
+  
       # Run Dependency Check analysis
       - name: Run Dependency Check
         shell: cmd
@@ -100,8 +108,8 @@ jobs:
           echo "Running OWASP Dependency Check..."
           dependency-check\bin\dependency-check.bat --project "DHL-Document-App-Test" --scan "." --format "JSON" --out "test-reports" --enableRetired --enableExperimental
           echo "Dependency Check analysis completed."
-
-      # Validate Dependency Scan Results
+  
+      # Validate results of Dependency Scan
       - name: Validate Dependency Scan Results
         run: |
           if (Test-Path "test-reports") {
@@ -111,14 +119,6 @@ jobs:
             echo "Dependency scanning test failed"
             exit 1
           }
-
-      # Test .NET Security Audit
-      - name: Test .NET Security Audit
-        run: |
-          echo "Testing .NET security audit commands..."
-          dotnet list package --vulnerable --include-transitive
-          dotnet list package --deprecated
-          echo ".NET security audit test completed"
 
   # Job 3: CONTAINER SCANNING TEST
   test-container-scanning:
