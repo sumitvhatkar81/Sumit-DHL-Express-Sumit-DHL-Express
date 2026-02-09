@@ -26,7 +26,7 @@ jobs:
       - name: Create Security Configuration Files
         run: |
          
-          # Create ZAP rules file
+          # Create ZAP rules file ok
           echo "# OWASP ZAP Security Rules for DHL Document App" > .zap/rules.tsv
           echo "10010	IGNORE	(Informational)" >> .zap/rules.tsv
           echo "10011	IGNORE	(Informational)" >> .zap/rules.tsv
